@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Simulación sin API - Rutas por Coordenadas</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+    .vehicle {
+      background-color: red;
+      border-radius: 50%;
+      width: 14px;
+      height: 14px;
+      transform: translate(-7px, -7px);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // Inicializamos el mapa centrado en Monterrey
+    const map = L.map('map').setView([25.6866, -100.3161], 15);
+
+    // Capa base
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // =======================
+    // VARIABLES DE RUTAS (simulan un Excel)
+    // =======================
+
+    const ruta1 = [
+      [25.6866, -100.3161], // Inicio
+      [25.6868, -100.3140],
+      [25.6875, -100.3130],
+      [25.6880, -100.3105], // Giro
+      [25.6890, -100.3090]  // Fin
+    ];
+
+    const ruta2 = [
+      [25.6866, -100.3161], // Inicio
+      [25.6858, -100.3175],
+      [25.6845, -100.3160],
+      [25.6835, -100.3135], // Giro
+      [25.6828, -100.3110]  // Fin
+    ];
+
+    const ruta3 = [
+      [25.6866, -100.3161], // Inicio
+      [25.6872, -100.3180],
+      [25.6885, -100.3195],
+      [25.6895, -100.3180], // Giro
+      [25.6900, -100.3160]  // Fin
+    ];
+
+    const rutas = [ruta1, ruta2, ruta3];
+    const colores = ['blue', 'green', 'orange'];
+
+    // =======================
+    // DIBUJAR RUTAS Y VEHÍCULOS
+    // =======================
+
+    const marcadores = [];
+
+    rutas.forEach((ruta, i) => {
+      // Dibujar línea
+      L.polyline(ruta, {
+        color: colores[i],
+        weight: 4
+      }).addTo(map);
+
+      // Crear marcador tipo vehículo
+      const marcador = L.marker(ruta[0], {
+        icon: L.divIcon({ className: 'vehicle' })
+      }).addTo(map);
+
+      marcadores.push({ marcador, ruta });
+    });
+
+    // =======================
+    // ANIMAR VEHÍCULOS SOBRE LAS RUTAS
+    // =======================
+
+    function animarRuta(marcador, coordenadas, velocidadMs) {
+      let i = 0;
+
+      function moverAlSiguienteTramo() {
+        if (i >= coordenadas.length - 1) {
+          i = 0; // Reiniciar para que repita la ruta
+        }
+
+        const inicio = coordenadas[i];
+        const fin = coordenadas[i + 1];
+
+        const pasos = 100;
+        let paso = 0;
+
+        const latStep = (fin[0] - inicio[0]) / pasos;
+        const lngStep = (fin[1] - inicio[1]) / pasos;
+
+        const intervalo = setInterval(() => {
+          if (paso >= pasos) {
+            clearInterval(intervalo);
+            i++;
+            moverAlSiguienteTramo();
+            return;
+          }
+
+          const nuevaLat = inicio[0] + latStep * paso;
+          const nuevaLng = inicio[1] + lngStep * paso;
+          marcador.setLatLng([nuevaLat, nuevaLng]);
+
+          paso++;
+        }, velocidadMs);
+      }
+
+      moverAlSiguienteTramo();
+    }
+
+    // Lanzar animaciones con distintas velocidades
+    animarRuta(marcadores[0].marcador, marcadores[0].ruta, 50);  // Ruta 1: rápida
+    animarRuta(marcadores[1].marcador, marcadores[1].ruta, 100); // Ruta 2: media
+    animarRuta(marcadores[2].marcador, marcadores[2].ruta, 150); // Ruta 3: lenta
+
+  </script>
+</body>
+</html>
+
+

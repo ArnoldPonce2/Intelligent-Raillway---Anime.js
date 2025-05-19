@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulación desde Excel</title>
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map { height: 90vh; width: 100%; }
+    .vehicle {
+      background: red;
+      border-radius: 50%;
+      width: 14px;
+      height: 14px;
+      transform: translate(-7px, -7px);
+    }
+  </style>
+</head>
+<body>
+
+  <h3>Cargar archivo Excel con coordenadas</h3>
+  <input type="file" id="upload" accept=".xlsx" />
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([25.6866, -100.3161], 15);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    document.getElementById('upload').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet);
+
+      // Agrupar por ruta
+      const rutas = {};
+      json.forEach(row => {
+        if (!rutas[row.ruta]) rutas[row.ruta] = [];
+        rutas[row.ruta].push([row.lat, row.lng]);
+      });
+
+      const colores = ['blue', 'green', 'orange'];
+      let i = 0;
+
+      Object.entries(rutas).forEach(([rutaNombre, coords]) => {
+        // Dibujar ruta
+        L.polyline(coords, {
+          color: colores[i % colores.length],
+          weight: 4
+        }).addTo(map);
+
+        // Crear marcador
+        const marcador = L.marker(coords[0], {
+          icon: L.divIcon({ className: 'vehicle' })
+        }).addTo(map);
+
+        // Animar ruta
+        animarRuta(marcador, coords, 70 + i * 30);
+        i++;
+      });
+    });
+
+    function animarRuta(marcador, coords, velocidadMs) {
+      let i = 0;
+      function moverPaso() {
+        if (i >= coords.length - 1) {
+          i = 0; // Reiniciar ruta
+        }
+        const [startLat, startLng] = coords[i];
+        const [endLat, endLng] = coords[i + 1];
+        const pasos = 100;
+        let paso = 0;
+        const latStep = (endLat - startLat) / pasos;
+        const lngStep = (endLng - startLng) / pasos;
+
+        const interval = setInterval(() => {
+          if (paso >= pasos) {
+            clearInterval(interval);
+            i++;
+            moverPaso();
+            return;
+          }
+          const newLat = startLat + paso * latStep;
+          const newLng = startLng + paso * lngStep;
+          marcador.setLatLng([newLat, newLng]);
+          paso++;
+        }, velocidadMs);
+      }
+      moverPaso();
+    }
+  </script>
+</body>
+</html>
