@@ -39,11 +39,26 @@
       display: block;
       margin-top: 5px;
     }
+
+    #zonaCritica {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 40px;
+      height: 40px;
+      background: red;
+      border-radius: 50%;
+      opacity: 0.6;
+      z-index: 998;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
 
   <div id="map"></div>
+  <div id="zonaCritica"></div>
 
   <!-- CONTROLES -->
   <div id="controls">
@@ -52,6 +67,7 @@
     <span class="porcentaje" id="p1">Ruta 1: 0%</span>
     <span class="porcentaje" id="p2">Ruta 2: 0%</span>
     <span class="porcentaje" id="p3">Ruta 3: 0%</span>
+    <br><br><span id="relojSimulado">Día 1, 00:00</span>
   </div>
 
   <!-- Leaflet JS -->
@@ -133,6 +149,16 @@
             const tramos = coordenadas.length - 1;
             porcentajes[id] = ((i + progress) / tramos * 100).toFixed(1);
             document.getElementById(porcentajeIds[id]).innerText = `Ruta ${id + 1}: ${porcentajes[id]}%`;
+
+            // CAMBIO DE RUTA VISUAL AL 50%
+            if (porcentajes[id] > 50 && coordenadas._colorCambiado !== true) {
+              coordenadas._colorCambiado = true;
+              L.polyline(coordenadas, {
+                color: 'red',
+                weight: 4,
+                dashArray: '5, 10'
+              }).addTo(map);
+            }
           },
           complete: () => {
             i++;
@@ -144,7 +170,7 @@
       siguienteTramo();
     }
 
-    // Play / Pause Global
+    // Botón Play / Pause
     document.getElementById("playPause").addEventListener("click", () => {
       pausado = !pausado;
       animaciones.forEach(anim => {
@@ -158,12 +184,32 @@
     document.getElementById("speedControl").addEventListener("input", (e) => {
       const factor = parseFloat(e.target.value);
       velocidadBase = 3000 / factor;
-
-      // Reiniciar tramos con nueva velocidad
       animaciones.forEach((anim, index) => {
-        if (anim) anim.pause(); // detener actual
-        animarRuta(index, rutas[index], marcadores[index]); // reiniciar
+        if (anim) anim.pause();
+        animarRuta(index, rutas[index], marcadores[index]);
       });
+    });
+
+    // Reloj de simulación
+    let horaActual = 0;
+    const relojSpan = document.getElementById("relojSimulado");
+    function avanzarReloj() {
+      horaActual++;
+      const dia = Math.floor(horaActual / 24) + 1;
+      const hora = horaActual % 24;
+      relojSpan.textContent = `Día ${dia}, ${hora.toString().padStart(2, '0')}:00`;
+      if (horaActual < 336) setTimeout(avanzarReloj, 5000);
+    }
+    avanzarReloj();
+
+    // Zona Crítica animada
+    anime({
+      targets: '#zonaCritica',
+      opacity: [0.3, 1],
+      duration: 1000,
+      easing: 'easeInOutSine',
+      direction: 'alternate',
+      loop: true
     });
   </script>
 </body>
