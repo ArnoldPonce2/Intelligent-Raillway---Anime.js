@@ -92,7 +92,7 @@
     const animaciones = [];
     const porcentajes = [0, 0, 0];
     const porcentajeIds = ['p1', 'p2', 'p3'];
-    let velocidadBase = 1500;
+    let velocidadBase = 3000;
     let pausado = false;
 
     rutas.forEach((ruta, index) => {
@@ -157,7 +157,7 @@
     // Control de velocidad
     document.getElementById("speedControl").addEventListener("input", (e) => {
       const factor = parseFloat(e.target.value);
-      velocidadBase = 1500 / factor;
+      velocidadBase = 3000 / factor;
 
       // Reiniciar tramos con nueva velocidad
       animaciones.forEach((anim, index) => {
