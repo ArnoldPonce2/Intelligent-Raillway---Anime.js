@@ -9,29 +9,15 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- Anime.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
-  <!-- XLSX para leer archivos Excel -->
-  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 
   <style>
     html, body { margin: 0; height: 100%; }
     #map { width: 100%; height: 100%; }
 
-    #controls {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: white;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      font-family: sans-serif;
-      z-index: 999;
-    }
-
     .vehicle-icon {
       width: 16px;
       height: 16px;
-      background: #0000ff;
+      background: #007bff;
       border-radius: 50%;
       border: 2px solid white;
       transform: translate(-8px, -8px);
@@ -47,13 +33,16 @@
       100% { opacity: 1; }
     }
 
-    .package-icon {
-      width: 20px;
-      height: 20px;
-      background-image: url('https://cdn-icons-png.flaticon.com/512/1484/1484848.png');
-      background-size: cover;
+    #controls {
       position: absolute;
-      z-index: 1000;
+      top: 10px;
+      left: 10px;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      font-family: sans-serif;
+      z-index: 999;
     }
 
     .porcentaje {
@@ -75,183 +64,142 @@
       transform: translate(-50%, -50%);
       pointer-events: none;
     }
-
-    .pulse-effect {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background: rgba(255, 255, 0, 0.6);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 997;
-    }
   </style>
 </head>
 <body>
 
-  <div id="map"></div>
-  <div id="zonaCritica"></div>
+<div id="map"></div>
+<div id="zonaCritica"></div>
 
-  <!-- CONTROLES -->
-  <div id="controls">
-    <button id="playPause">⏸️ Pausar</button><br><br>
-    Velocidad: <input type="range" id="speedControl" min="0.5" max="3" step="0.1" value="1"><br>
-    <span class="porcentaje" id="p1">Ruta 1: 0%</span>
-    <span class="porcentaje" id="p2">Ruta 2: 0%</span>
-    <span class="porcentaje" id="p3">Ruta 3: 0%</span>
-    <span class="porcentaje" id="p4">Ruta 4: 0%</span>
-    <span class="porcentaje" id="p5">Ruta 5: 0%</span>
-    <span class="porcentaje" id="p6">Ruta 6: 0%</span>
-    <br><br><span id="relojSimulado">Día 1, 00:00</span><br><br>
-    <input type="file" id="uploadExcel" accept=".xlsx" />
-  </div>
+<div id="controls">
+  <button id="playPause">⏸️ Pausar</button><br><br>
+  Velocidad: <input type="range" id="speedControl" min="0.5" max="3" step="0.1" value="1"><br>
+  <span class="porcentaje" id="p1">Ruta 1: 0%</span>
+  <span class="porcentaje" id="p2">Ruta 2: 0%</span>
+  <span class="porcentaje" id="p3">Ruta 3: 0%</span>
+  <span class="porcentaje" id="p4">Ruta 4: 0%</span>
+  <span class="porcentaje" id="p5">Ruta 5: 0%</span>
+  <span class="porcentaje" id="p6">Ruta 6: 0%</span>
+  <br><br><span id="relojSimulado">Día 1, 00:00</span>
+</div>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <script>
-    const map = L.map('map').setView([25.6866, -100.3161], 15);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+<script>
+  const map = L.map('map').setView([25.6866, -100.3161], 15);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
+
+  const rutas = [
+    [[25.6866, -100.3161], [25.6868, -100.3140], [25.6875, -100.3130], [25.6880, -100.3105], [25.6890, -100.3090]],
+    [[25.6866, -100.3161], [25.6858, -100.3175], [25.6845, -100.3160], [25.6835, -100.3135], [25.6828, -100.3110]],
+    [[25.6866, -100.3161], [25.6872, -100.3180], [25.6885, -100.3195], [25.6895, -100.3180], [25.6900, -100.3160]],
+    [[25.6866, -100.3161], [25.6855, -100.3185], [25.6840, -100.3195], [25.6825, -100.3180], [25.6810, -100.3160]],
+    [[25.6866, -100.3161], [25.6880, -100.3150], [25.6890, -100.3135], [25.6900, -100.3110], [25.6910, -100.3090]],
+    [[25.6866, -100.3161], [25.6850, -100.3145], [25.6840, -100.3130], [25.6830, -100.3115], [25.6820, -100.3100]]
+  ];
+
+  const colores = ['blue', 'green', 'orange', 'purple', 'brown', 'black'];
+  const marcadores = [];
+  const porcentajes = [];
+  const animaciones = [];
+  const porcentajeIds = ['p1','p2','p3','p4','p5','p6'];
+  const zonaCritica = L.latLng(25.6866, -100.3161);
+  let velocidadBase = 3000;
+  let pausado = false;
+
+  rutas.forEach((ruta, index) => {
+    const polyline = L.polyline(ruta, { color: colores[index], weight: 4 }).addTo(map);
+    const marcador = L.marker(ruta[0], {
+      icon: L.divIcon({ className: 'vehicle-icon' })
     }).addTo(map);
 
-    const colores = ['blue', 'green', 'orange', 'purple', 'brown', 'black'];
-    const marcadores = [];
-    const animaciones = [];
-    const porcentajes = [];
-    const porcentajeIds = [];
-    let velocidadBase = 3000;
-    let pausado = false;
-    let rutaCount = 0;
+    marcadores.push(marcador);
+    porcentajes.push(0);
+    animarRuta(index, ruta, marcador);
+  });
 
-    const zonaCritica = L.latLng(25.6866, -100.3161);
+  function animarRuta(id, coordenadas, marcador) {
+    let i = 0;
 
-    const rutas = [
-      [[25.6866, -100.3161], [25.6868, -100.3140], [25.6875, -100.3130], [25.6880, -100.3105], [25.6890, -100.3090]],
-      [[25.6866, -100.3161], [25.6858, -100.3175], [25.6845, -100.3160], [25.6835, -100.3135], [25.6828, -100.3110]],
-      [[25.6866, -100.3161], [25.6872, -100.3180], [25.6885, -100.3195], [25.6895, -100.3180], [25.6900, -100.3160]],
-      [[25.6866, -100.3161], [25.6855, -100.3185], [25.6840, -100.3195], [25.6825, -100.3180], [25.6810, -100.3160]],
-      [[25.6866, -100.3161], [25.6880, -100.3150], [25.6890, -100.3135], [25.6900, -100.3110], [25.6910, -100.3090]],
-      [[25.6866, -100.3161], [25.6850, -100.3145], [25.6840, -100.3130], [25.6830, -100.3115], [25.6820, -100.3100]]
-    ];
-
-    rutas.forEach((ruta, index) => {
-      dibujarYRastrearRuta(ruta, index);
-    });
-
-    function dibujarYRastrearRuta(ruta, index) {
-      const polyline = L.polyline(ruta, {
-        color: colores[index % colores.length],
-        weight: 4
-      }).addTo(map);
-
-      const marcador = L.marker(ruta[0], {
-        icon: L.divIcon({ className: 'vehicle-icon' })
-      }).addTo(map);
-
-      const porcentajeId = `p${index + 1}`;
-      porcentajeIds.push(porcentajeId);
-      porcentajes.push(0);
-      marcadores.push(marcador);
-      animarRuta(index, ruta, marcador);
-    }
-
-    function animarRuta(id, coordenadas, marcador) {
-      let i = 0;
-      mostrarPaquete(marcador);
-
-      function siguienteTramo() {
-        if (i >= coordenadas.length - 1) {
-          i = 0; // Reinicia desde el principio sin detener
-        }
-        const inicio = { lat: coordenadas[i][0], lng: coordenadas[i][1] };
-        const fin = { lat: coordenadas[i + 1][0], lng: coordenadas[i + 1][1] };
-
-        animaciones[id] = anime({
-          targets: inicio,
-          lat: fin.lat,
-          lng: fin.lng,
-          duration: velocidadBase,
-          easing: 'linear',
-          update: () => {
-            marcador.setLatLng([inicio.lat, inicio.lng]);
-            const progress = animaciones[id].progress / 100;
-            const tramos = coordenadas.length - 1;
-            porcentajes[id] = ((i + progress) / tramos * 100).toFixed(1);
-            document.getElementById(porcentajeIds[id]).innerText = `Ruta ${id + 1}: ${porcentajes[id]}%`;
-
-            const distancia = marcador.getLatLng().distanceTo(zonaCritica);
-            if (distancia < 100) {
-              marcador._icon.classList.add('vehicle-warning');
-            } else {
-              marcador._icon.classList.remove('vehicle-warning');
-            }
-          },
-          complete: () => {
-            i++;
-            siguienteTramo();
-          }
-        });
+    function siguienteTramo() {
+      if (i >= coordenadas.length - 1) {
+        i = 0;
+        porcentajes[id] = 0;
       }
-      siguienteTramo();
-    }
 
-    function mostrarPaquete(marcador) {
-      const paquete = document.createElement('div');
-      paquete.className = 'package-icon';
-      document.body.appendChild(paquete);
-      const latlng = marcador.getLatLng();
-      const point = map.latLngToContainerPoint(latlng);
-      paquete.style.left = `${point.x}px`;
-      paquete.style.top = `${point.y}px`;
+      const inicio = { lat: coordenadas[i][0], lng: coordenadas[i][1] };
+      const fin = { lat: coordenadas[i + 1][0], lng: coordenadas[i + 1][1] };
 
-      anime({
-        targets: paquete,
-        scale: [0.5, 1.2],
-        opacity: [1, 0],
-        duration: 1200,
-        easing: 'easeOutExpo',
-        complete: () => paquete.remove()
+      animaciones[id] = anime({
+        targets: inicio,
+        lat: fin.lat,
+        lng: fin.lng,
+        duration: velocidadBase,
+        easing: 'linear',
+        update: () => {
+          marcador.setLatLng([inicio.lat, inicio.lng]);
+          const progress = animaciones[id].progress / 100;
+          const tramos = coordenadas.length - 1;
+          porcentajes[id] = ((i + progress) / tramos * 100).toFixed(1);
+          document.getElementById(porcentajeIds[id]).innerText = `Ruta ${id + 1}: ${porcentajes[id]}%`;
+
+          const distancia = marcador.getLatLng().distanceTo(zonaCritica);
+          if (distancia < 100) {
+            marcador._icon.classList.add('vehicle-warning');
+          } else {
+            marcador._icon.classList.remove('vehicle-warning');
+          }
+        },
+        complete: () => {
+          i++;
+          siguienteTramo();
+        }
       });
     }
+    siguienteTramo();
+  }
 
-    document.getElementById("playPause").addEventListener("click", () => {
-      pausado = !pausado;
-      animaciones.forEach(anim => {
-        if (pausado) anim.pause();
-        else anim.play();
-      });
-      document.getElementById("playPause").innerText = pausado ? "▶️ Reanudar" : "⏸️ Pausar";
+  document.getElementById("playPause").addEventListener("click", () => {
+    pausado = !pausado;
+    animaciones.forEach(anim => {
+      if (pausado) anim.pause();
+      else anim.play();
     });
+    document.getElementById("playPause").innerText = pausado ? "▶️ Reanudar" : "⏸️ Pausar";
+  });
 
-    document.getElementById("speedControl").addEventListener("input", (e) => {
-      const factor = parseFloat(e.target.value);
-      velocidadBase = 3000 / factor;
-      animaciones.forEach((anim, index) => {
-        if (anim) anim.pause();
-        animarRuta(index, rutas[index], marcadores[index]);
-      });
+  document.getElementById("speedControl").addEventListener("input", (e) => {
+    const factor = parseFloat(e.target.value);
+    velocidadBase = 3000 / factor;
+    animaciones.forEach((anim, index) => {
+      if (anim) anim.pause();
+      animarRuta(index, rutas[index], marcadores[index]);
     });
+  });
 
-    let horaActual = 0;
-    const relojSpan = document.getElementById("relojSimulado");
-    function avanzarReloj() {
-      horaActual++;
-      const dia = Math.floor(horaActual / 24) + 1;
-      const hora = horaActual % 24;
-      relojSpan.textContent = `Día ${dia}, ${hora.toString().padStart(2, '0')}:00`;
-      if (horaActual < 336) setTimeout(avanzarReloj, 5000);
-    }
-    avanzarReloj();
+  let horaActual = 0;
+  const relojSpan = document.getElementById("relojSimulado");
+  function avanzarReloj() {
+    horaActual++;
+    const dia = Math.floor(horaActual / 24) + 1;
+    const hora = horaActual % 24;
+    relojSpan.textContent = `Día ${dia}, ${hora.toString().padStart(2, '0')}:00`;
+    if (horaActual < 336) setTimeout(avanzarReloj, 5000);
+  }
+  avanzarReloj();
 
-    anime({
-      targets: '#zonaCritica',
-      opacity: [0.3, 1],
-      duration: 1000,
-      easing: 'easeInOutSine',
-      direction: 'alternate',
-      loop: true
-    });
-  </script>
+  anime({
+    targets: '#zonaCritica',
+    opacity: [0.3, 1],
+    duration: 1000,
+    easing: 'easeInOutSine',
+    direction: 'alternate',
+    loop: true
+  });
+</script>
+
 </body>
 </html>
