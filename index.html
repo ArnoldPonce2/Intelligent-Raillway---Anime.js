@@ -7,6 +7,9 @@
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Anime.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
   <style>
     html, body {
       margin: 0;
@@ -42,44 +45,44 @@
     }).addTo(map);
 
     // =======================
-    // VARIABLES DE RUTAS (simulan un Excel)
+    // VARIABLES DE RUTAS
     // =======================
 
     const ruta1 = [
-      [25.6866, -100.3161], // Inicio
+      [25.6866, -100.3161],
       [25.6868, -100.3140],
       [25.6875, -100.3130],
-      [25.6880, -100.3105], // Giro
-      [25.6890, -100.3090]  // Fin
+      [25.6880, -100.3105],
+      [25.6890, -100.3090]
     ];
 
     const ruta2 = [
-      [25.6866, -100.3161], // Inicio
+      [25.6866, -100.3161],
       [25.6858, -100.3175],
       [25.6845, -100.3160],
-      [25.6835, -100.3135], // Giro
-      [25.6828, -100.3110]  // Fin
+      [25.6835, -100.3135],
+      [25.6828, -100.3110]
     ];
 
     const ruta3 = [
-      [25.6866, -100.3161], // Inicio
+      [25.6866, -100.3161],
       [25.6872, -100.3180],
       [25.6885, -100.3195],
-      [25.6895, -100.3180], // Giro
-      [25.6900, -100.3160]  // Fin
+      [25.6895, -100.3180],
+      [25.6900, -100.3160]
     ];
 
     const rutas = [ruta1, ruta2, ruta3];
     const colores = ['blue', 'green', 'orange'];
 
+    const marcadores = [];
+
     // =======================
     // DIBUJAR RUTAS Y VEHÍCULOS
     // =======================
 
-    const marcadores = [];
-
     rutas.forEach((ruta, i) => {
-      // Dibujar línea
+      // Dibujar la línea
       L.polyline(ruta, {
         color: colores[i],
         weight: 4
@@ -94,7 +97,7 @@
     });
 
     // =======================
-    // ANIMAR VEHÍCULOS SOBRE LAS RUTAS
+    // ANIMAR VEHÍCULOS CON ANIME.JS
     // =======================
 
     function animarRuta(marcador, coordenadas, velocidadMs) {
@@ -102,44 +105,35 @@
 
       function moverAlSiguienteTramo() {
         if (i >= coordenadas.length - 1) {
-          i = 0; // Reiniciar para que repita la ruta
+          i = 0; // reinicia la ruta
         }
 
-        const inicio = coordenadas[i];
-        const fin = coordenadas[i + 1];
+        const inicio = { lat: coordenadas[i][0], lng: coordenadas[i][1] };
+        const fin = { lat: coordenadas[i + 1][0], lng: coordenadas[i + 1][1] };
 
-        const pasos = 100;
-        let paso = 0;
-
-        const latStep = (fin[0] - inicio[0]) / pasos;
-        const lngStep = (fin[1] - inicio[1]) / pasos;
-
-        const intervalo = setInterval(() => {
-          if (paso >= pasos) {
-            clearInterval(intervalo);
+        anime({
+          targets: inicio,
+          lat: fin.lat,
+          lng: fin.lng,
+          duration: velocidadMs * 100,
+          easing: 'linear',
+          update: () => {
+            marcador.setLatLng([inicio.lat, inicio.lng]);
+          },
+          complete: () => {
             i++;
             moverAlSiguienteTramo();
-            return;
           }
-
-          const nuevaLat = inicio[0] + latStep * paso;
-          const nuevaLng = inicio[1] + lngStep * paso;
-          marcador.setLatLng([nuevaLat, nuevaLng]);
-
-          paso++;
-        }, velocidadMs);
+        });
       }
 
       moverAlSiguienteTramo();
     }
 
-    // Lanzar animaciones con distintas velocidades
-    animarRuta(marcadores[0].marcador, marcadores[0].ruta, 50);  // Ruta 1: rápida
-    animarRuta(marcadores[1].marcador, marcadores[1].ruta, 100); // Ruta 2: media
-    animarRuta(marcadores[2].marcador, marcadores[2].ruta, 150); // Ruta 3: lenta
-
+    // Lanzar las animaciones
+    animarRuta(marcadores[0].marcador, marcadores[0].ruta, 50);  // rápido
+    animarRuta(marcadores[1].marcador, marcadores[1].ruta, 100); // medio
+    animarRuta(marcadores[2].marcador, marcadores[2].ruta, 150); // lento
   </script>
 </body>
 </html>
-
-
