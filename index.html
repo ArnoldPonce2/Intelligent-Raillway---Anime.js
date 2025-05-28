@@ -34,7 +34,6 @@
       background-image: url('https://cdn-icons-png.flaticon.com/512/1995/1995471.png');
       background-size: cover;
       transform: translate(-12px, -12px);
-      transition: transform 0.3s ease;
     }
 
     .porcentaje {
@@ -128,19 +127,14 @@
         icon: L.divIcon({ className: 'vehicle-icon' })
       }).addTo(map);
 
-      marcador._rotation = 0;
-      marcador._setRotation = (angle) => {
-        marcador._icon.style.transform = `rotate(${angle}deg) translate(-12px, -12px)`;
-      };
-
       const porcentajeId = `p${index + 1}`;
       porcentajeIds.push(porcentajeId);
       porcentajes.push(0);
       marcadores.push(marcador);
-      animarRuta(index, ruta, marcador, polyline);
+      animarRuta(index, ruta, marcador);
     }
 
-    function animarRuta(id, coordenadas, marcador, polyline) {
+    function animarRuta(id, coordenadas, marcador) {
       let i = 0;
       function siguienteTramo() {
         if (i >= coordenadas.length - 1) {
@@ -149,9 +143,6 @@
         }
         const inicio = { lat: coordenadas[i][0], lng: coordenadas[i][1] };
         const fin = { lat: coordenadas[i + 1][0], lng: coordenadas[i + 1][1] };
-
-        const angle = Math.atan2(fin.lat - inicio.lat, fin.lng - inicio.lng) * (180 / Math.PI);
-        marcador._setRotation(angle);
 
         animaciones[id] = anime({
           targets: inicio,
@@ -165,9 +156,6 @@
             const tramos = coordenadas.length - 1;
             porcentajes[id] = ((i + progress) / tramos * 100).toFixed(1);
             document.getElementById(porcentajeIds[id]).innerText = `Ruta ${id + 1}: ${porcentajes[id]}%`;
-
-            const color = `hsl(${(1 - progress) * 120}, 100%, 50%)`;
-            polyline.setStyle({ color });
           },
           complete: () => {
             i++;
