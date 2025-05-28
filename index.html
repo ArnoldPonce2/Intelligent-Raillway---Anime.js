@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <!-- Anime.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+  <!-- XLSX para leer archivos Excel -->
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 
   <style>
     html, body { margin: 0; height: 100%; }
@@ -67,7 +69,11 @@
     <span class="porcentaje" id="p1">Ruta 1: 0%</span>
     <span class="porcentaje" id="p2">Ruta 2: 0%</span>
     <span class="porcentaje" id="p3">Ruta 3: 0%</span>
-    <br><br><span id="relojSimulado">Día 1, 00:00</span>
+    <span class="porcentaje" id="p4">Ruta 4: 0%</span>
+    <span class="porcentaje" id="p5">Ruta 5: 0%</span>
+    <span class="porcentaje" id="p6">Ruta 6: 0%</span>
+    <br><br><span id="relojSimulado">Día 1, 00:00</span><br><br>
+    <input type="file" id="uploadExcel" accept=".xlsx" />
   </div>
 
   <!-- Leaflet JS -->
@@ -79,41 +85,31 @@
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
-    const rutas = [
-      [
-        [25.6866, -100.3161],
-        [25.6868, -100.3140],
-        [25.6875, -100.3130],
-        [25.6880, -100.3105],
-        [25.6890, -100.3090]
-      ],
-      [
-        [25.6866, -100.3161],
-        [25.6858, -100.3175],
-        [25.6845, -100.3160],
-        [25.6835, -100.3135],
-        [25.6828, -100.3110]
-      ],
-      [
-        [25.6866, -100.3161],
-        [25.6872, -100.3180],
-        [25.6885, -100.3195],
-        [25.6895, -100.3180],
-        [25.6900, -100.3160]
-      ]
-    ];
-
-    const colores = ['blue', 'green', 'orange'];
+    const colores = ['blue', 'green', 'orange', 'purple', 'brown', 'black'];
     const marcadores = [];
     const animaciones = [];
-    const porcentajes = [0, 0, 0];
-    const porcentajeIds = ['p1', 'p2', 'p3'];
+    const porcentajes = [];
+    const porcentajeIds = [];
     let velocidadBase = 3000;
     let pausado = false;
+    let rutaCount = 0;
+
+    const rutas = [
+      [[25.6866, -100.3161], [25.6868, -100.3140], [25.6875, -100.3130], [25.6880, -100.3105], [25.6890, -100.3090]],
+      [[25.6866, -100.3161], [25.6858, -100.3175], [25.6845, -100.3160], [25.6835, -100.3135], [25.6828, -100.3110]],
+      [[25.6866, -100.3161], [25.6872, -100.3180], [25.6885, -100.3195], [25.6895, -100.3180], [25.6900, -100.3160]],
+      [[25.6866, -100.3161], [25.6855, -100.3185], [25.6840, -100.3195], [25.6825, -100.3180], [25.6810, -100.3160]],
+      [[25.6866, -100.3161], [25.6880, -100.3150], [25.6890, -100.3135], [25.6900, -100.3110], [25.6910, -100.3090]],
+      [[25.6866, -100.3161], [25.6850, -100.3145], [25.6840, -100.3130], [25.6830, -100.3115], [25.6820, -100.3100]]
+    ];
 
     rutas.forEach((ruta, index) => {
+      dibujarYRastrearRuta(ruta, index);
+    });
+
+    function dibujarYRastrearRuta(ruta, index) {
       L.polyline(ruta, {
-        color: colores[index],
+        color: colores[index % colores.length],
         weight: 4
       }).addTo(map);
 
@@ -121,22 +117,22 @@
         icon: L.divIcon({ className: 'vehicle' })
       }).addTo(map);
 
+      const porcentajeId = `p${index + 1}`;
+      porcentajeIds.push(porcentajeId);
+      porcentajes.push(0);
       marcadores.push(marcador);
       animarRuta(index, ruta, marcador);
-    });
+    }
 
     function animarRuta(id, coordenadas, marcador) {
       let i = 0;
-
       function siguienteTramo() {
         if (i >= coordenadas.length - 1) {
           i = 0;
           porcentajes[id] = 0;
         }
-
         const inicio = { lat: coordenadas[i][0], lng: coordenadas[i][1] };
         const fin = { lat: coordenadas[i + 1][0], lng: coordenadas[i + 1][1] };
-
         animaciones[id] = anime({
           targets: inicio,
           lat: fin.lat,
@@ -149,16 +145,6 @@
             const tramos = coordenadas.length - 1;
             porcentajes[id] = ((i + progress) / tramos * 100).toFixed(1);
             document.getElementById(porcentajeIds[id]).innerText = `Ruta ${id + 1}: ${porcentajes[id]}%`;
-
-            // CAMBIO DE RUTA VISUAL AL 50%
-            if (porcentajes[id] > 50 && coordenadas._colorCambiado !== true) {
-              coordenadas._colorCambiado = true;
-              L.polyline(coordenadas, {
-                color: 'red',
-                weight: 4,
-                dashArray: '5, 10'
-              }).addTo(map);
-            }
           },
           complete: () => {
             i++;
@@ -166,11 +152,9 @@
           }
         });
       }
-
       siguienteTramo();
     }
 
-    // Botón Play / Pause
     document.getElementById("playPause").addEventListener("click", () => {
       pausado = !pausado;
       animaciones.forEach(anim => {
@@ -180,7 +164,6 @@
       document.getElementById("playPause").innerText = pausado ? "▶️ Reanudar" : "⏸️ Pausar";
     });
 
-    // Control de velocidad
     document.getElementById("speedControl").addEventListener("input", (e) => {
       const factor = parseFloat(e.target.value);
       velocidadBase = 3000 / factor;
@@ -190,7 +173,6 @@
       });
     });
 
-    // Reloj de simulación
     let horaActual = 0;
     const relojSpan = document.getElementById("relojSimulado");
     function avanzarReloj() {
@@ -202,7 +184,6 @@
     }
     avanzarReloj();
 
-    // Zona Crítica animada
     anime({
       targets: '#zonaCritica',
       opacity: [0.3, 1],
@@ -210,6 +191,29 @@
       easing: 'easeInOutSine',
       direction: 'alternate',
       loop: true
+    });
+
+    document.getElementById('uploadExcel').addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data);
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const json = XLSX.utils.sheet_to_json(sheet);
+
+      const rutasExcel = {};
+      json.forEach(row => {
+        if (!rutasExcel[row.ruta]) rutasExcel[row.ruta] = [];
+        rutasExcel[row.ruta].push([row.lat, row.lng]);
+      });
+
+      Object.values(rutasExcel).forEach((ruta, index) => {
+        dibujarYRastrearRuta(ruta, rutas.length + index);
+        const span = document.createElement('span');
+        span.className = 'porcentaje';
+        span.id = `p${rutas.length + index + 1}`;
+        span.textContent = `Ruta ${rutas.length + index + 1}: 0%`;
+        document.getElementById('controls').appendChild(span);
+      });
     });
   </script>
 </body>
