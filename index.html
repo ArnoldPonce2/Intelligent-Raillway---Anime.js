@@ -162,7 +162,7 @@
 
       function siguienteTramo() {
         if (i >= coordenadas.length - 1) {
-          i = 0;
+          i = 0; // Reinicia desde el principio sin detener
         }
         const inicio = { lat: coordenadas[i][0], lng: coordenadas[i][1] };
         const fin = { lat: coordenadas[i + 1][0], lng: coordenadas[i + 1][1] };
@@ -194,25 +194,6 @@
         });
       }
       siguienteTramo();
-    }
-
-    function mostrarPulse(marcador) {
-      const pulse = document.createElement('div');
-      pulse.className = 'pulse-effect';
-      document.body.appendChild(pulse);
-      const latlng = marcador.getLatLng();
-      const point = map.latLngToContainerPoint(latlng);
-      pulse.style.left = `${point.x}px`;
-      pulse.style.top = `${point.y}px`;
-
-      anime({
-        targets: pulse,
-        scale: [0.5, 3],
-        opacity: [0.6, 0],
-        easing: 'easeOutQuad',
-        duration: 1200,
-        complete: () => pulse.remove()
-      });
     }
 
     function mostrarPaquete(marcador) {
