@@ -29,11 +29,12 @@
     }
 
     .vehicle-icon {
-      width: 24px;
-      height: 24px;
-      background-image: url('https://cdn-icons-png.flaticon.com/512/1995/1995471.png');
-      background-size: cover;
-      transform: translate(-12px, -12px);
+      width: 16px;
+      height: 16px;
+      background: #0000ff;
+      border-radius: 50%;
+      border: 2px solid white;
+      transform: translate(-8px, -8px);
     }
 
     .vehicle-warning {
@@ -41,9 +42,9 @@
     }
 
     @keyframes blink {
-      0% { filter: hue-rotate(0deg); }
-      50% { filter: hue-rotate(180deg); }
-      100% { filter: hue-rotate(0deg); }
+      0% { opacity: 1; }
+      50% { opacity: 0.3; }
+      100% { opacity: 1; }
     }
 
     .package-icon {
@@ -161,8 +162,7 @@
 
       function siguienteTramo() {
         if (i >= coordenadas.length - 1) {
-          mostrarPulse(marcador);
-          return;
+          i = 0;
         }
         const inicio = { lat: coordenadas[i][0], lng: coordenadas[i][1] };
         const fin = { lat: coordenadas[i + 1][0], lng: coordenadas[i + 1][1] };
@@ -175,7 +175,6 @@
           easing: 'linear',
           update: () => {
             marcador.setLatLng([inicio.lat, inicio.lng]);
-
             const progress = animaciones[id].progress / 100;
             const tramos = coordenadas.length - 1;
             porcentajes[id] = ((i + progress) / tramos * 100).toFixed(1);
